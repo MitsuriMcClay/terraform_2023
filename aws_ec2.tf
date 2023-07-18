@@ -7,7 +7,7 @@ resource "aws_instance" "terraform_sample_mitsuri" {
   vpc_security_group_ids      = [aws_security_group.terraform_sample_mitsuri.id]
   key_name                    = "terraform_key"
   tags = {
-    Name = "${format("mitsuri%02d", count.index + 1)}"
+    Name = "${format("test_server%02d", count.index + 1)}"
   }
 
 }
