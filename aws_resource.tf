@@ -104,6 +104,13 @@ resource "aws_lb" "terraform_sample_mitsuri" {
 
   security_groups = [aws_security_group.terraform_sample_mitsuri.id]
   subnets         = aws_subnet.terraform_sample_mitsuri[*].id
+
+access_logs {
+    bucket  = aws_s3_bucket.terraform_sample_mitsuri.id
+    prefix  = "PREFIX"
+    enabled = true
+  }
+
 }
 #----------------------------------------
 # Target Groupの作成
@@ -166,16 +173,24 @@ resource "aws_s3_bucket" "terraform_sample_mitsuri" {
 #----------------------------------------
 # S3バケットに対するIAMポリシー作成
 #----------------------------------------
-data "aws_iam_policy_document" "lb_log" {
+data "aws_iam_policy_document" "alb_log" {
   statement {
     effect    = "Allow"
     actions   = ["s3:PutObject"]
-    resources = ["arn:aws:s3:::${aws_s3_bucket.terraform_sample_mitsur.id}/*"]
+    resources = ["arn:aws:s3:::${aws_s3_bucket.terraform_sample_mitsuri.id}/*"]
 
     principals {
       type = "AWS"
-      # Principalには、東京リージョン（ap-northeast-1）を指すElastic Load Balancing アカウント ID（582318560864）を記載する
+      # Principalには、terraform_userアカウントIDを記載する
       identifiers = ["582318560864"]
     }
   }
+}
+
+#----------------------------------------
+# S3バケットポリシー作成
+#----------------------------------------
+resource "aws_s3_bucket_policy" "alb_log" {
+  bucket = aws_s3_bucket.terraform_sample_mitsuri.id
+  policy = data.aws_iam_policy_document.alb_log.json
 }
