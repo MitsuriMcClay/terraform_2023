@@ -105,7 +105,7 @@ resource "aws_lb" "terraform_sample_mitsuri" {
   security_groups = [aws_security_group.terraform_sample_mitsuri.id]
   subnets         = aws_subnet.terraform_sample_mitsuri[*].id
 
-access_logs {
+  access_logs {
     bucket  = aws_s3_bucket.terraform_sample_mitsuri.id
     prefix  = "PREFIX"
     enabled = true
@@ -163,7 +163,8 @@ resource "aws_lb_listener" "terraform_sample_mitsuri" {
 # S3バケットの作成
 #----------------------------------------
 resource "aws_s3_bucket" "terraform_sample_mitsuri" {
-  bucket = "terraform-sample-mitsuri-bucket"
+  force_destroy = true
+  bucket        = "terraform-sample-mitsuri-bucket"
 
   tags = {
     Name = "terraform_sample_mitsuri"
@@ -193,4 +194,30 @@ data "aws_iam_policy_document" "alb_log" {
 resource "aws_s3_bucket_policy" "alb_log" {
   bucket = aws_s3_bucket.terraform_sample_mitsuri.id
   policy = data.aws_iam_policy_document.alb_log.json
+}
+
+#----------------------------------------
+# Route53 Zone情報登録
+#----------------------------------------
+resource "aws_route53_zone" "mcclaymitsuri" {
+  name = "mcclaymitsuri.net"
+  tags = {
+    Name = var.tags
+  }
+}
+
+#----------------------------------------
+# Route53の構築
+#----------------------------------------
+# レコードを作成
+resource "aws_route53_record" "mcclaymitsuri" {
+  zone_id = "Z06408092SLZYAWQ0QSHX"
+  name    = "mcclaymitsuri.net"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.terraform_sample_mitsuri.dns_name
+    zone_id                = aws_lb.terraform_sample_mitsuri.zone_id
+    evaluate_target_health = true
+  }
 }
